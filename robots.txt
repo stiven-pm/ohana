@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://ohanaheladeria.co/sitemap.xml
