@@ -26,7 +26,19 @@
   <meta name="twitter:description" content="Copas de helado, granizados, lulada, obleas y postres con fruta fresca.">
   <meta name="twitter:image" content="https://ohana.rekov.co/logo.png">
 
-  <link rel="stylesheet" href="./style.css">
+  <!-- HTML sin caché larga; JS/CSS llevan ?v= para invalidar caché en visitas previas -->
+  <meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
+
+  <!-- Fix crítico inline: funciona aunque chat.js viejo siga en caché del navegador -->
+  <style>
+    .chat-widget[hidden],
+    .chat-chips[hidden],
+    .chat-backdrop[hidden] {
+      display: none !important;
+    }
+  </style>
+
+  <link rel="stylesheet" href="./style.css?v=20260704">
 
   <script type="application/ld+json">
     {
@@ -329,10 +341,10 @@
     <input type="hidden" name="mode" id="api-mode" value="">
   </form>
 
-  <script src="./js/config.js"></script>
-  <script src="./js/cart.js"></script>
-  <script src="./js/assistant.js"></script>
-  <script src="./js/chat.js"></script>
-  <script src="./js/app.js"></script>
+  <script src="./js/config.js?v=20260704"></script>
+  <script src="./js/cart.js?v=20260704"></script>
+  <script src="./js/assistant.js?v=20260704"></script>
+  <script src="./js/chat.js?v=20260704"></script>
+  <script src="./js/app.js?v=20260704"></script>
 </body>
 </html>
