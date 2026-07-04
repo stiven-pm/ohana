@@ -210,7 +210,10 @@ function bindEvents(menu) {
   });
 
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeCartDrawer();
+    if (e.key === "Escape") {
+      closeCartDrawer();
+      closeChatWidget();
+    }
   });
 }
 

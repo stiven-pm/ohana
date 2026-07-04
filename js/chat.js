@@ -46,7 +46,7 @@ function setChatLoading(loading) {
   const input = document.getElementById("chat-input");
   if (btn) {
     btn.disabled = loading;
-    btn.textContent = loading ? "Pensando…" : "Enviar";
+    btn.textContent = loading ? "…" : "➤";
   }
   if (input) input.disabled = loading;
 }
@@ -143,6 +143,25 @@ async function sendChatMessage(menu, text) {
   }
 }
 
+function openChatWidget() {
+  const widget = document.getElementById("chat-widget");
+  const toggle = document.getElementById("chat-toggle");
+  if (!widget) return;
+  widget.hidden = false;
+  widget.setAttribute("aria-hidden", "false");
+  if (toggle) toggle.setAttribute("aria-expanded", "true");
+  document.getElementById("chat-input")?.focus();
+}
+
+function closeChatWidget() {
+  const widget = document.getElementById("chat-widget");
+  const toggle = document.getElementById("chat-toggle");
+  if (!widget) return;
+  widget.hidden = true;
+  widget.setAttribute("aria-hidden", "true");
+  if (toggle) toggle.setAttribute("aria-expanded", "false");
+}
+
 function initChat(menu) {
   const input = document.getElementById("chat-input");
   const sendBtn = document.getElementById("chat-send");
@@ -183,7 +202,18 @@ function initChat(menu) {
   document.body.addEventListener("click", (e) => {
     const chip = e.target.closest("#chat-chips [data-chip]");
     if (!chip) return;
+    openChatWidget();
     input.value = chip.dataset.chip;
     submit();
+  });
+
+  document.getElementById("chat-toggle")?.addEventListener("click", () => {
+    const widget = document.getElementById("chat-widget");
+    if (widget?.hidden) openChatWidget();
+    else closeChatWidget();
+  });
+
+  document.querySelectorAll("[data-close-chat]").forEach((btn) => {
+    btn.addEventListener("click", closeChatWidget);
   });
 }
