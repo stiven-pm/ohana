@@ -1,0 +1,201 @@
+{
+  "currency": "COP",
+  "categories": [
+    { "id": "postres-con-helado", "name": "Postres con helado" },
+    { "id": "adiciones", "name": "Adiciones" },
+    { "id": "helados", "name": "Helados" },
+    { "id": "preparaciones-frias", "name": "Preparaciones frías" },
+    { "id": "preparaciones-frutas", "name": "Preparaciones de frutas" }
+  ],
+  "products": [
+    {
+      "id": "brownie-helado",
+      "name": "Brownie con Helado",
+      "category": "postres-con-helado",
+      "price": 14000,
+      "ingredients": ["brownie", "chocolate", "helado", "crema"],
+      "tags": ["dulce", "chocolate", "postre"],
+      "description": "Brownie tibio con helado cremoso."
+    },
+    {
+      "id": "wafle-helado",
+      "name": "Wafle con Helado",
+      "category": "postres-con-helado",
+      "price": 13500,
+      "ingredients": ["wafle", "helado", "miel", "crema"],
+      "tags": ["dulce", "crujiente", "postre"],
+      "description": "Wafle crujiente con helado y miel."
+    },
+    {
+      "id": "obleas",
+      "name": "Obleas",
+      "category": "postres-con-helado",
+      "price": 8000,
+      "ingredients": ["obleas", "arequipe", "helado", "queso"],
+      "tags": ["colombiano", "dulce", "clásico"],
+      "description": "Obleas con arequipe y helado, estilo colombiano."
+    },
+    {
+      "id": "toppings",
+      "name": "Toppings (maní, chispas, etc.)",
+      "category": "adiciones",
+      "price": 2500,
+      "ingredients": ["maní", "chispas de chocolate", "granola"],
+      "tags": ["extra", "crujiente"],
+      "description": "Adición de toppings a tu preparación."
+    },
+    {
+      "id": "fruta-extra",
+      "name": "Fruta extra (fresa, banano, etc.)",
+      "category": "adiciones",
+      "price": 3000,
+      "ingredients": ["fresa", "banano", "fruta"],
+      "tags": ["extra", "fruta"],
+      "description": "Porción extra de fruta fresca."
+    },
+    {
+      "id": "queso",
+      "name": "Queso",
+      "category": "adiciones",
+      "price": 2000,
+      "ingredients": ["queso"],
+      "tags": ["extra", "salado", "colombiano"],
+      "description": "Queso rallado para copas y ensaladas."
+    },
+    {
+      "id": "arequipe",
+      "name": "Arequipe",
+      "category": "adiciones",
+      "price": 2500,
+      "ingredients": ["arequipe", "leche condensada"],
+      "tags": ["extra", "dulce"],
+      "description": "Arequipe casero como adición."
+    },
+    {
+      "id": "durazno",
+      "name": "Durazno",
+      "category": "adiciones",
+      "price": 2500,
+      "ingredients": ["durazno", "fruta"],
+      "tags": ["extra", "fruta"],
+      "description": "Durazno en almíbar o fresco."
+    },
+    {
+      "id": "cereza",
+      "name": "Cereza",
+      "category": "adiciones",
+      "price": 2500,
+      "ingredients": ["cereza", "fruta"],
+      "tags": ["extra", "fruta"],
+      "description": "Cerezas para decorar o mezclar."
+    },
+    {
+      "id": "helado-tradicional",
+      "name": "Helado Tradicional",
+      "category": "helados",
+      "price": 6000,
+      "ingredients": ["helado", "leche", "azúcar"],
+      "tags": ["helado", "clásico", "cremoso"],
+      "description": "Una bola de helado artesanal."
+    },
+    {
+      "id": "helado-doble",
+      "name": "Helado Doble",
+      "category": "helados",
+      "price": 9000,
+      "ingredients": ["helado", "leche", "azúcar"],
+      "tags": ["helado", "cremoso"],
+      "description": "Dos bolas de helado a elegir."
+    },
+    {
+      "id": "helado-extra",
+      "name": "Helado Extra",
+      "category": "helados",
+      "price": 12000,
+      "ingredients": ["helado", "leche", "azúcar"],
+      "tags": ["helado", "cremoso", "generoso"],
+      "description": "Porción extra generosa de helado."
+    },
+    {
+      "id": "fresas-crema",
+      "name": "Fresas con Crema",
+      "category": "preparaciones-frias",
+      "price": 11000,
+      "ingredients": ["fresa", "crema", "azúcar", "leche"],
+      "tags": ["fruta", "cremoso", "refrescante"],
+      "description": "Fresas frescas con crema batida."
+    },
+    {
+      "id": "banano-crema",
+      "name": "Banano con Crema",
+      "category": "preparaciones-frias",
+      "price": 10000,
+      "ingredients": ["banano", "crema", "leche"],
+      "tags": ["fruta", "cremoso", "dulce"],
+      "description": "Banano maduro con crema."
+    },
+    {
+      "id": "mango-crema",
+      "name": "Mango con Crema",
+      "category": "preparaciones-frias",
+      "price": 11000,
+      "ingredients": ["mango", "crema", "leche"],
+      "tags": ["fruta", "tropical", "cremoso"],
+      "description": "Mango fresco con crema."
+    },
+    {
+      "id": "ensalada-tropical",
+      "name": "Ensalada Tropical",
+      "category": "preparaciones-frias",
+      "price": 12500,
+      "ingredients": ["papaya", "piña", "mango", "banano", "fresa", "helado", "crema"],
+      "tags": ["fruta", "tropical", "fresco", "variado"],
+      "description": "Mix de frutas tropicales con helado y crema."
+    },
+    {
+      "id": "mix-acido",
+      "name": "Mix Ácido",
+      "category": "preparaciones-frias",
+      "price": 11500,
+      "ingredients": ["lulo", "maracuyá", "mora", "limón", "fruta"],
+      "tags": ["ácido", "refrescante", "fruta"],
+      "description": "Combinación de frutas ácidas bien frías."
+    },
+    {
+      "id": "lulada",
+      "name": "Lulada",
+      "category": "preparaciones-frias",
+      "price": 9000,
+      "ingredients": ["lulo", "hielo", "azúcar", "limón"],
+      "tags": ["ácido", "refrescante", "colombiano", "bebida"],
+      "description": "Lulada clásica, fría y ácida."
+    },
+    {
+      "id": "smoothie-malteada",
+      "name": "Smoothie o Malteada",
+      "category": "preparaciones-frias",
+      "price": 13000,
+      "ingredients": ["leche", "helado", "fruta", "chocolate"],
+      "tags": ["bebida", "cremoso", "frío"],
+      "description": "Malteada o smoothie a base de fruta o chocolate."
+    },
+    {
+      "id": "jugos-naturales",
+      "name": "Jugos naturales",
+      "category": "preparaciones-frutas",
+      "price": 7000,
+      "ingredients": ["mango", "mora", "fresa", "piña", "banano", "maracuyá", "lulo", "manzana", "fruta"],
+      "tags": ["bebida", "natural", "refrescante"],
+      "description": "Jugo natural de la fruta que elijas."
+    },
+    {
+      "id": "limonada-frappe",
+      "name": "Limonada o Frappé (sandía, cereza y coco)",
+      "category": "preparaciones-frutas",
+      "price": 9500,
+      "ingredients": ["limón", "sandía", "cereza", "coco", "hielo"],
+      "tags": ["bebida", "refrescante", "tropical"],
+      "description": "Limonada o frappé de sandía, cereza o coco."
+    }
+  ]
+}

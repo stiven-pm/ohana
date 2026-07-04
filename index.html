@@ -91,10 +91,12 @@
     <ul class="nav-links">
       <li><a href="#galeria">Galería</a></li>
       <li><a href="#menu">Menú</a></li>
+      <li><a href="#asistente">Asistente</a></li>
+      <li><a href="#pedido">Pedir</a></li>
       <li><a href="#nosotros">Nosotros</a></li>
       <li><a href="#contacto">Contacto</a></li>
     </ul>
-    <a href="#contacto" class="nav-cta">Pedir ahora</a>
+    <a href="#pedido" class="nav-cta">Pedir ahora</a>
   </nav>
 
   <main>
@@ -112,7 +114,7 @@
         </p>
         <div class="hero-actions">
           <a href="#menu" class="btn-primary">Ver menú</a>
-          <a href="#galeria" class="btn-outline">Nuestras preparaciones</a>
+          <a href="#asistente" class="btn-outline">¿Qué me recomiendas?</a>
         </div>
       </div>
 
@@ -180,53 +182,81 @@
         <img src="./assets/menu-ref.png" width="1200" height="600" alt="Menú impreso de Ohana Heladería con categorías de postres, helados y preparaciones de fruta" loading="lazy">
       </figure>
 
-      <div class="menu-grid">
-        <div class="menu-column">
-          <h3>Postres con helado</h3>
-          <ul class="menu-list">
-            <li><span>Brownie con Helado</span><span class="price" aria-label="Precio por definir"></span></li>
-            <li><span>Wafle con Helado</span><span class="price" aria-label="Precio por definir"></span></li>
-            <li><span>Obleas</span><span class="price" aria-label="Precio por definir"></span></li>
-          </ul>
+      <div id="menu-root" class="menu-grid" aria-live="polite"></div>
+    </section>
 
-          <h3>Adiciones</h3>
-          <ul class="menu-list">
-            <li><span>Toppings (maní, chispas, etc.)</span><span class="price" aria-label="Precio por definir"></span></li>
-            <li><span>Fruta extra (fresa, banano, etc.)</span><span class="price" aria-label="Precio por definir"></span></li>
-            <li><span>Queso</span><span class="price" aria-label="Precio por definir"></span></li>
-            <li><span>Arequipe</span><span class="price" aria-label="Precio por definir"></span></li>
-            <li><span>Durazno</span><span class="price" aria-label="Precio por definir"></span></li>
-            <li><span>Cereza</span><span class="price" aria-label="Precio por definir"></span></li>
-          </ul>
+    <section class="section-wrap assistant-section" id="asistente" aria-labelledby="asistente-title">
+      <p class="section-label">Asistente</p>
+      <h2 class="section-title" id="asistente-title">¿Qué te provoque según ingredientes?</h2>
+      <p class="section-intro">Escribe frutas, sabores o antojos. Te sugerimos del menú sin guardar tus datos.</p>
+
+      <div class="assistant-panel">
+        <div class="assistant-search-row">
+          <input
+            type="search"
+            id="assistant-input"
+            class="assistant-input"
+            placeholder="Ej: algo ácido con lulo, fresa y crema, chocolate…"
+            autocomplete="off"
+          >
+          <button type="button" id="assistant-search" class="btn-primary">Buscar</button>
         </div>
+        <div id="ingredient-chips" class="ingredient-chips" aria-label="Ingredientes populares"></div>
+        <div id="assistant-results" class="assistant-results"></div>
+      </div>
+    </section>
 
-        <div class="menu-column">
-          <h3>Helados</h3>
-          <ul class="menu-list">
-            <li><span>Tradicional</span><span class="price" aria-label="Precio por definir"></span></li>
-            <li><span>Doble</span><span class="price" aria-label="Precio por definir"></span></li>
-            <li><span>Extra</span><span class="price" aria-label="Precio por definir"></span></li>
-          </ul>
+    <section class="section-wrap order-section" id="pedido" aria-labelledby="pedido-title">
+      <p class="section-label">Tu pedido</p>
+      <h2 class="section-title" id="pedido-title">Arma el pedido y paga seguro</h2>
+      <p class="section-intro">Agrega productos del menú. Pagas el total exacto con Wompi. Sin registro en nuestro sitio.</p>
 
-          <h3>Preparaciones frías</h3>
-          <ul class="menu-list">
-            <li><span>Fresas con Crema</span><span class="price" aria-label="Precio por definir"></span></li>
-            <li><span>Banano con Crema</span><span class="price" aria-label="Precio por definir"></span></li>
-            <li><span>Mango con Crema</span><span class="price" aria-label="Precio por definir"></span></li>
-            <li><span>Ensalada Tropical</span><span class="price" aria-label="Precio por definir"></span></li>
-            <li><span>Mix Ácido</span><span class="price" aria-label="Precio por definir"></span></li>
-            <li><span>Lulada</span><span class="price" aria-label="Precio por definir"></span></li>
-            <li><span>Smoothie o Malteada</span><span class="price" aria-label="Precio por definir"></span></li>
-          </ul>
+      <div id="config-warning" class="config-warning" hidden>
+        Falta configurar la URL de pago en <code>js/config.js</code> y el script de Google Apps Script.
+        Mientras tanto puedes armar el pedido y enviarlo por WhatsApp.
+      </div>
 
-          <h3>Preparaciones de frutas</h3>
-          <p class="menu-note">Jugos: mango, mora, fresa, piña, banano, maracuyá, lulo y manzana.</p>
-          <ul class="menu-list">
-            <li><span>Jugos naturales</span><span class="price" aria-label="Precio por definir"></span></li>
-            <li><span>Limonada o Frappé (sandía, cereza y coco)</span><span class="price" aria-label="Precio por definir"></span></li>
-          </ul>
+      <div class="order-layout">
+        <div class="cart-panel">
+          <div class="cart-header">
+            <h3>Carrito <span id="cart-count" class="cart-badge">0</span></h3>
+            <button type="button" id="btn-clear-cart" class="btn-text">Vaciar</button>
+          </div>
+          <p id="cart-empty" class="cart-empty">Aún no has agregado nada. Ve al menú o usa el asistente.</p>
+          <ul id="cart-lines" class="cart-lines"></ul>
+          <div class="cart-footer">
+            <div class="cart-total-row">
+              <span>Total</span>
+              <strong id="cart-total">$0</strong>
+            </div>
+
+            <fieldset class="delivery-mode">
+              <legend>¿Cuándo lo quieres?</legend>
+              <label class="radio-card">
+                <input type="radio" name="delivery-mode" value="now" checked>
+                <span>Para llevar ya</span>
+              </label>
+              <label class="radio-card">
+                <input type="radio" name="delivery-mode" value="scheduled">
+                <span>Programar entrega (después de pagar)</span>
+              </label>
+            </fieldset>
+
+            <button type="button" id="btn-pay" class="btn-primary btn-block" disabled>
+              Pagar con Wompi
+            </button>
+            <button type="button" id="btn-whatsapp-cart" class="btn-outline btn-block">
+              Solo consultar por WhatsApp
+            </button>
+            <p class="order-note">Al pagar, Wompi procesa el cobro. Nosotros no guardamos tarjetas ni datos de pago.</p>
+          </div>
         </div>
       </div>
+
+      <form id="checkout-form" method="POST" target="_self" hidden>
+        <input type="hidden" name="items" id="checkout-items" value="">
+        <input type="hidden" name="mode" id="checkout-mode" value="now">
+      </form>
     </section>
 
     <section class="section-wrap about" id="nosotros" aria-labelledby="nosotros-title">
@@ -240,9 +270,8 @@
           o una <strong>lulada bien fría</strong>.
         </p>
         <p>
-          Este sitio es un <strong>prototipo</strong> para mostrar la propuesta visual,
-          el menú y la experiencia que puede llevar tu heladería a internet:
-          galería de productos, carta clara y contacto directo para pedidos.
+          Arma tu pedido en línea, paga con Wompi y — si lo programas —
+          elige la hora de entrega en nuestro calendario. Sin cuenta ni registro en el sitio.
         </p>
       </div>
       <div class="about-stats">
@@ -268,8 +297,7 @@
     <section class="contact" id="contacto" aria-labelledby="contacto-title">
       <h2 id="contacto-title">¿Te gusta lo que ves?</h2>
       <p class="contact-sub">
-        Escríbenos para cotizar el sitio final con precios, ubicación en mapa
-        y pedidos por WhatsApp integrados.
+        ¿Dudas sobre el menú o un pedido grande? Escríbenos directo.
       </p>
       <div class="contact-actions">
         <a href="https://wa.me/529842780118?text=Hola%20Ohana%2C%20quiero%20conocer%20más%20sobre%20la%20heladería" class="contact-link" target="_blank" rel="noopener noreferrer">
@@ -289,11 +317,16 @@
       <span class="footer-copy">© 2026 Ohana Heladería. Prototipo de presentación.</span>
     </div>
     <ul class="footer-links">
+      <li><a href="#pedido">Pedir</a></li>
       <li><a href="#menu">Menú</a></li>
       <li><a href="#galeria">Galería</a></li>
       <li><a href="#contacto">Contacto</a></li>
     </ul>
   </footer>
 
+  <script src="./js/config.js"></script>
+  <script src="./js/cart.js"></script>
+  <script src="./js/assistant.js"></script>
+  <script src="./js/app.js"></script>
 </body>
 </html>
