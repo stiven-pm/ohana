@@ -74,22 +74,49 @@ function setChatLoading(loading) {
   if (input) input.disabled = loading;
 }
 
-const CHAT_STOPWORDS = new Set([
-  "hola", "como", "que", "te", "me", "un", "una", "el", "la", "de", "por", "con", "si", "no",
-  "ya", "muy", "mas", "llamas", "nombre", "quien", "eres", "buenas", "gracias", "ayuda",
-]);
+function buildChatCatalog(menu) {
+  return menu.products.map((p) => ({
+    id: p.id,
+    name: p.name,
+    price: p.price,
+    ingredients: p.ingredients || [],
+    tags: p.tags || [],
+    description: p.description || "",
+  }));
+}
 
-function localFallback(menu, query) {
-  const tokens = tokenizeQuery(query).filter((t) => !CHAT_STOPWORDS.has(t));
-  if (!tokens.length) return null;
+function buildChatPrompt(message, catalog) {
+  return (
+    'Eres "Asistente Ohana", el chat de Ohana Heladería (Colombia). Saluda, conversa con naturalidad ' +
+    "y recomienda del menú cuando el cliente lo pida o mencione antojos.\n" +
+    'Responde SOLO JSON válido: {"message":"...","productIds":[]}. ' +
+    "productIds: hasta 3 ids del menú (vacío si no recomiendas productos). Español colombiano, 1-3 frases.\n\n" +
+    "Menú: " +
+    JSON.stringify(catalog) +
+    "\n\nCliente: " +
+    message
+  );
+}
 
-  const matches = recommendProducts(menu, tokens.join(" "), 3);
-  if (!matches.length || matches[0].score < 2) return null;
+function parseGeminiErrorBody(body, status) {
+  try {
+    const err = JSON.parse(body).error;
+    if (err?.message) return err.message;
+  } catch (_) {
+    /* ignore */
+  }
+  return "Gemini HTTP " + status;
+}
 
+function parseGeminiResponse(raw, catalog) {
+  const parsed = JSON.parse(raw || "{}");
+  const validIds = (parsed.productIds || []).filter((id) => catalog.some((p) => p.id === id));
+  const message = String(parsed.message || "").trim();
+  if (!message) throw new Error("Gemini devolvió respuesta vacía");
   return {
     ok: true,
-    message: "Del menú te va bien:",
-    productIds: matches.map((m) => m.product.id),
+    message,
+    productIds: validIds.slice(0, 3),
   };
 }
 
@@ -163,45 +190,45 @@ async function callGeminiClient(message, menu) {
   const apiKey = OHANA_CONFIG.geminiApiKey;
   if (!apiKey) throw new Error("Sin geminiApiKey");
 
-  const catalog = menu.products.map((p) => ({
-    id: p.id,
-    name: p.name,
-    price: p.price,
-    ingredients: p.ingredients || [],
-    tags: p.tags || [],
-  }));
+  const catalog = buildChatCatalog(menu);
+  const prompt = buildChatPrompt(message, catalog);
+  const models = ["gemini-2.0-flash-lite", "gemini-2.0-flash", "gemini-1.5-flash"];
+  let lastError = "Gemini no respondió";
 
-  const prompt =
-    'Asistente Ohana Heladería (Colombia). JSON only: {"message":"...","productIds":["id"]}. Max 3 ids del menú.\n' +
-    JSON.stringify(catalog) +
-    "\n\n" +
-    message;
+  for (const model of models) {
+    try {
+      const res = await fetch(
+        "https://generativelanguage.googleapis.com/v1beta/models/" +
+          model +
+          ":generateContent?key=" +
+          encodeURIComponent(apiKey),
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              responseMimeType: "application/json",
+              temperature: 0.8,
+              maxOutputTokens: 500,
+            },
+          }),
+        }
+      );
 
-  const res = await fetch(
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" +
-      encodeURIComponent(apiKey),
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: "application/json", maxOutputTokens: 400 },
-      }),
+      const body = await res.text();
+      if (!res.ok) throw new Error(parseGeminiErrorBody(body, res.status));
+
+      const payload = JSON.parse(body);
+      const raw = payload?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+      return parseGeminiResponse(raw, catalog);
+    } catch (err) {
+      lastError = err.message || String(err);
+      console.warn("Gemini " + model + ":", err);
     }
-  );
+  }
 
-  if (!res.ok) throw new Error("Gemini " + res.status);
-
-  const payload = await res.json();
-  const raw = payload?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-  const parsed = JSON.parse(raw);
-  const validIds = (parsed.productIds || []).filter((id) => catalog.some((p) => p.id === id));
-
-  return {
-    ok: true,
-    message: parsed.message || "Te recomiendo:",
-    productIds: validIds.slice(0, 3),
-  };
+  throw new Error(lastError);
 }
 
 async function requestChat(message, menu) {
@@ -210,34 +237,40 @@ async function requestChat(message, menu) {
       return await callGeminiClient(message, menu);
     } catch (err) {
       console.warn("Gemini cliente:", err);
+      return {
+        ok: false,
+        message:
+          "No pude usar la IA (" +
+          (err.message || err) +
+          "). Revisa geminiApiKey en config.js o GEMINI_API_KEY en Apps Script.",
+        productIds: [],
+      };
     }
   }
 
-  let apiError = null;
   try {
     const raw = await requestChatJsonp(message);
     const normalized = normalizeChatPayload(raw);
     if (normalized?.ok && normalized.message) return normalized;
-    if (normalized?.error) apiError = normalized.error;
+    if (normalized?.error) {
+      return {
+        ok: false,
+        message: "No pude usar la IA: " + normalized.error,
+        productIds: [],
+      };
+    }
   } catch (err) {
     console.warn("JSONP chat:", err);
-  }
-
-  const fb = localFallback(menu, message);
-  if (fb) return fb;
-
-  if (apiError) {
     return {
-      ok: true,
-      message:
-        "La IA no respondió (revisa GEMINI_API_KEY en Apps Script). Mientras tanto prueba un sabor como «fresa» o «chocolate», o escríbenos por WhatsApp.",
+      ok: false,
+      message: "No pude conectar con la IA. Revisa GEMINI_API_KEY en Apps Script.",
       productIds: [],
     };
   }
 
   return {
-    ok: true,
-    message: "No encontré algo exacto. Mira el menú o escríbenos por WhatsApp.",
+    ok: false,
+    message: "No pude obtener respuesta de la IA.",
     productIds: [],
   };
 }

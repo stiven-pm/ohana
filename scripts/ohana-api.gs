@@ -88,16 +88,39 @@ function callGemini_(userMessage, menu) {
     };
   });
 
-  const prompt =
-    "Eres el asistente de Ohana Heladería (Colombia). Recomienda solo del menú. " +
-    'Responde SOLO JSON: {"message":"...","productIds":["id"]}. Máximo 3 ids. Español colombiano, breve.\n\n' +
+  const prompt = buildChatPrompt_(userMessage, catalog);
+  const models = ["gemini-2.0-flash-lite", "gemini-2.0-flash", "gemini-1.5-flash"];
+  let lastError = "Gemini no respondió";
+
+  for (var i = 0; i < models.length; i++) {
+    try {
+      return requestGeminiModel_(models[i], apiKey, prompt, catalog);
+    } catch (err) {
+      lastError = String(err.message || err);
+    }
+  }
+
+  throw new Error(lastError);
+}
+
+function buildChatPrompt_(userMessage, catalog) {
+  return (
+    'Eres "Asistente Ohana", el chat de Ohana Heladería (Colombia). Saluda, conversa con naturalidad ' +
+    "y recomienda del menú cuando el cliente lo pida o mencione antojos.\n" +
+    'Responde SOLO JSON válido: {"message":"...","productIds":[]}. ' +
+    "productIds: hasta 3 ids del menú (vacío si no recomiendas productos). Español colombiano, 1-3 frases.\n\n" +
     "Menú: " +
     JSON.stringify(catalog) +
     "\n\nCliente: " +
-    userMessage;
+    userMessage
+  );
+}
 
+function requestGeminiModel_(model, apiKey, prompt, catalog) {
   const url =
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" +
+    "https://generativelanguage.googleapis.com/v1beta/models/" +
+    model +
+    ":generateContent?key=" +
     encodeURIComponent(apiKey);
 
   const res = UrlFetchApp.fetch(url, {
@@ -107,18 +130,21 @@ function callGemini_(userMessage, menu) {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
         responseMimeType: "application/json",
-        temperature: 0.7,
-        maxOutputTokens: 400,
+        temperature: 0.8,
+        maxOutputTokens: 500,
       },
     }),
     muteHttpExceptions: true,
   });
 
-  if (res.getResponseCode() < 200 || res.getResponseCode() >= 300) {
-    throw new Error("Gemini no respondió");
+  const code = res.getResponseCode();
+  const body = res.getContentText();
+
+  if (code < 200 || code >= 300) {
+    throw new Error(parseGeminiError_(body, code));
   }
 
-  const payload = JSON.parse(res.getContentText());
+  const payload = JSON.parse(body);
   const raw =
     payload.candidates &&
     payload.candidates[0] &&
@@ -126,6 +152,8 @@ function callGemini_(userMessage, menu) {
     payload.candidates[0].content.parts[0]
       ? payload.candidates[0].content.parts[0].text
       : "";
+
+  if (!raw) throw new Error("Gemini devolvió respuesta vacía");
 
   const parsed = JSON.parse(raw);
   const ids = (parsed.productIds || []).filter(function (id) {
@@ -135,9 +163,19 @@ function callGemini_(userMessage, menu) {
   });
 
   return {
-    message: String(parsed.message || "Aquí van mis sugerencias."),
+    message: String(parsed.message || "").trim() || "¿En qué más te ayudo?",
     productIds: ids.slice(0, 3),
   };
+}
+
+function parseGeminiError_(body, code) {
+  try {
+    const err = JSON.parse(body).error;
+    if (err && err.message) return err.message;
+  } catch (e) {
+    /* ignore */
+  }
+  return "Gemini HTTP " + code;
 }
 
 function handleCheckout_(body) {

@@ -851,6 +851,10 @@ body.has-cart-bar .float-stack {
   border-top: 1px solid var(--border);
 }
 
+.chat-chips[hidden] {
+  display: none !important;
+}
+
 .chat-compose {
   flex-shrink: 0;
   display: flex;
