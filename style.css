@@ -708,6 +708,67 @@ nav {
   margin-bottom: 18px;
 }
 
+.delivery-fields {
+  border: none;
+  margin-bottom: 16px;
+}
+
+.field-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.field-input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 14px;
+  margin-bottom: 12px;
+  background: #fff;
+}
+
+.field-input:focus {
+  outline: none;
+  border-color: var(--teal);
+}
+
+.field-input--area {
+  resize: vertical;
+  min-height: 64px;
+}
+
+.delivery-form {
+  margin-top: 12px;
+}
+
+.form-error {
+  color: #b42318;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.thanks-recovery {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(26, 107, 122, 0.06);
+  border: 1px solid var(--border);
+}
+
+.thanks-recovery code {
+  word-break: break-all;
+  font-size: 13px;
+}
+
+.recovery-detail {
+  font-size: 13px;
+  margin: 8px 0 12px;
+}
+
 .delivery-mode legend {
   font-weight: 700;
   font-size: 14px;

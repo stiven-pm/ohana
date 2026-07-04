@@ -6,6 +6,21 @@ function formatCopFromCents(cents) {
   }).format(cents / 100);
 }
 
+const THANKS_DELIVERY_IDS = {
+  name: "thanks-name",
+  phone: "thanks-phone",
+  email: "thanks-email",
+  address: "thanks-address",
+  notes: "thanks-notes",
+};
+
+let pageState = {
+  transactionId: "",
+  mode: "now",
+  payment: null,
+  deliveryConfirmed: false,
+};
+
 function setText(id, text) {
   const el = document.getElementById(id);
   if (el) el.textContent = text;
@@ -13,6 +28,10 @@ function setText(id, text) {
 
 function show(el) {
   if (el) el.hidden = false;
+}
+
+function hide(el) {
+  if (el) el.hidden = true;
 }
 
 function normalizeVerifyResult(payload) {
@@ -30,8 +49,7 @@ function normalizeVerifyResult(payload) {
 
 async function verifyPayment(transactionId) {
   const publicKey = OHANA_CONFIG.wompiPublicKey;
-  const apiBase =
-    OHANA_CONFIG.wompiApiBase || "https://production.wompi.co/v1";
+  const apiBase = OHANA_CONFIG.wompiApiBase || "https://production.wompi.co/v1";
 
   if (!publicKey) {
     throw new Error("Falta wompiPublicKey en js/config.js");
@@ -67,22 +85,129 @@ async function pollPayment(transactionId, attempts = 8) {
   return verifyPayment(transactionId);
 }
 
-function buildWhatsAppConfirm(reference, amountInCents) {
-  const text = encodeURIComponent(
-    `Hola Ohana, mi pago fue aprobado (ref: ${reference}, ${formatCopFromCents(amountInCents)}). Confirmo mi pedido.`
-  );
-  return `https://wa.me/${OHANA_CONFIG.whatsappNumber}?text=${text}`;
+function buildWhatsAppConfirm(payment, delivery, mode) {
+  const lines = [
+    "Hola Ohana, mi pago fue aprobado.",
+    `Ref: ${payment.reference}`,
+    `Monto: ${formatCopFromCents(payment.amountInCents || 0)}`,
+    `ID Wompi: ${payment.id}`,
+    ...deliverySummaryLines(delivery, mode),
+  ];
+  return `https://wa.me/${OHANA_CONFIG.whatsappNumber}?text=${encodeURIComponent(lines.join("\n"))}`;
 }
 
-async function initThanksPage() {
-  const params = new URLSearchParams(window.location.search);
-  const transactionId = params.get("id");
-  const mode = params.get("mode") === "scheduled" ? "scheduled" : "now";
+function buildWhatsAppHelp(transactionId) {
+  const lines = [
+    "Hola Ohana, necesito ayuda con mi pago.",
+    transactionId ? `ID Wompi: ${transactionId}` : "",
+    "Wompi me cobró pero la página no confirmó. ¿Me ayudan?",
+  ].filter(Boolean);
+  return `https://wa.me/${OHANA_CONFIG.whatsappNumber}?text=${encodeURIComponent(lines.join("\n"))}`;
+}
 
+function updateWhatsAppLink(payment, delivery, mode) {
+  const waLink = document.getElementById("whatsapp-link");
+  if (!waLink) return;
+
+  if (payment?.reference && payment.reference !== payment.id) {
+    waLink.href = buildWhatsAppConfirm(payment, delivery, mode);
+    waLink.textContent = "Confirmar por WhatsApp";
+  } else if (pageState.transactionId) {
+    waLink.href = buildWhatsAppHelp(pageState.transactionId);
+    waLink.textContent = "Ayuda por WhatsApp";
+  } else {
+    return;
+  }
+  show(waLink);
+}
+
+function showDeliveryStep(payment, mode) {
+  const deliverySection = document.getElementById("thanks-delivery");
+  const nextSection = document.getElementById("thanks-next");
+  if (!deliverySection) return;
+
+  fillDeliveryFields(loadDelivery(), THANKS_DELIVERY_IDS);
+  show(deliverySection);
+  hide(nextSection);
+
+  setText("delivery-intro", "Confirma dónde entregamos tu pedido. Lo usamos para coordinar contigo y en el calendario.");
+  updateWhatsAppLink(payment, loadDelivery() || {}, mode);
+}
+
+function showAfterDeliveryStep(payment, delivery, mode) {
+  const deliverySection = document.getElementById("thanks-delivery");
   const nextSection = document.getElementById("thanks-next");
   const calendarWrap = document.getElementById("calendar-wrap");
   const calendarFrame = document.getElementById("calendar-embed");
+
+  hide(deliverySection);
+  show(nextSection);
+  updateWhatsAppLink(payment, delivery, mode);
+
+  if (mode === "scheduled" && OHANA_CONFIG.calendarEmbedUrl) {
+    setText("next-title", "Elige la hora de entrega");
+    setText(
+      "next-message",
+      "Reserva en el calendario. Ya tenemos tu dirección; si cambia algo, avísanos por WhatsApp."
+    );
+    calendarFrame.src = OHANA_CONFIG.calendarEmbedUrl;
+    show(calendarWrap);
+  } else if (mode === "scheduled") {
+    setText("next-title", "Coordinamos tu entrega");
+    setText(
+      "next-message",
+      "Pago y dirección recibidos. Escríbenos por WhatsApp para fijar la hora si aún no tienes calendario."
+    );
+  } else {
+    setText("next-title", "Pedido en camino");
+    setText(
+      "next-message",
+      "Preparamos tu pedido para entrega lo antes posible, según disponibilidad. Te contactamos al teléfono que dejaste."
+    );
+  }
+}
+
+function showPaymentError(transactionId, err) {
+  const recovery = document.getElementById("thanks-recovery");
   const waLink = document.getElementById("whatsapp-link");
+
+  setText("thanks-title", "No pudimos confirmar en línea");
+  setText(
+    "thanks-message",
+    "Si Wompi ya te cobró, el pago está seguro. Guarda este ID y contáctanos; no vuelvas a pagar el mismo pedido."
+  );
+
+  if (recovery) {
+    show(recovery);
+    setText("recovery-id", transactionId || "—");
+    if (err?.message) setText("recovery-detail", err.message);
+  }
+
+  if (waLink) {
+    waLink.href = buildWhatsAppHelp(transactionId);
+    waLink.textContent = "Ayuda por WhatsApp";
+    show(waLink);
+  }
+
+  show(document.getElementById("thanks-next"));
+  setText("next-title", "¿Qué hacer?");
+  setText(
+    "next-message",
+    "Recarga esta página en un minuto. Si el pago aparece aprobado en Wompi, completa tus datos de entrega abajo o escríbenos."
+  );
+
+  showDeliveryStep(null, pageState.mode);
+}
+
+async function runVerification() {
+  const { transactionId, mode } = pageState;
+  const retryBtn = document.getElementById("btn-retry-verify");
+
+  setText("thanks-title", "Verificando tu pago…");
+  setText("thanks-message", "Espera un momento mientras confirmamos con Wompi.");
+  hide(document.getElementById("thanks-recovery"));
+  hide(document.getElementById("thanks-next"));
+  hide(document.getElementById("thanks-delivery"));
 
   if (!transactionId) {
     setText("thanks-title", "Pago no encontrado");
@@ -90,11 +215,19 @@ async function initThanksPage() {
       "thanks-message",
       "No recibimos el comprobante de Wompi. Si ya pagaste, escríbenos por WhatsApp con tu referencia."
     );
+    const waLink = document.getElementById("whatsapp-link");
+    if (waLink) {
+      waLink.href = buildWhatsAppHelp("");
+      show(waLink);
+    }
     return;
   }
 
+  if (retryBtn) retryBtn.disabled = true;
+
   try {
     const result = await pollPayment(transactionId);
+    pageState.payment = result;
 
     if (!result.approved) {
       setText("thanks-title", "Pago no completado");
@@ -104,12 +237,17 @@ async function initThanksPage() {
           ? "El pago sigue en proceso. Si usaste PSE o Nequi, puede tardar unos minutos."
           : "El pago no fue aprobado. Puedes intentar de nuevo desde el menú."
       );
-      show(nextSection);
+      show(document.getElementById("thanks-next"));
       setText("next-title", "¿Qué puedes hacer?");
       setText(
         "next-message",
-        "Vuelve al pedido e intenta otra vez, o contáctanos por WhatsApp si crees que hubo un error."
+        "Vuelve al menú e intenta otra vez, o contáctanos por WhatsApp si crees que hubo un error."
       );
+      const waLink = document.getElementById("whatsapp-link");
+      if (waLink) {
+        waLink.href = buildWhatsAppHelp(transactionId);
+        show(waLink);
+      }
       return;
     }
 
@@ -120,46 +258,59 @@ async function initThanksPage() {
       `Recibimos ${formatCopFromCents(result.amountInCents)}. Referencia: ${result.reference}.`
     );
 
-    show(nextSection);
-
-    if (mode === "scheduled" && OHANA_CONFIG.calendarEmbedUrl) {
-      setText("next-title", "Elige la hora de entrega");
-      setText(
-        "next-message",
-        "Reserva un hueco en el calendario. Solo verás esto después de pagar."
-      );
-      calendarFrame.src = OHANA_CONFIG.calendarEmbedUrl;
-      show(calendarWrap);
-    } else if (mode === "scheduled") {
-      setText("next-title", "Programa tu entrega");
-      setText(
-        "next-message",
-        "Pago listo. Escríbenos por WhatsApp para coordinar la hora de entrega."
-      );
-    } else {
-      setText("next-title", "Pedido para llevar ya");
-      setText(
-        "next-message",
-        "Estamos preparando tu pedido. Si quieres, confirma por WhatsApp con la referencia."
-      );
-    }
-
-    if (waLink && result.reference) {
-      waLink.href = buildWhatsAppConfirm(
-        result.reference,
-        result.amountInCents || 0
-      );
-      show(waLink);
-    }
+    showDeliveryStep(result, mode);
   } catch (err) {
     console.error(err);
-    setText("thanks-title", "No pudimos verificar el pago");
-    setText(
-      "thanks-message",
-      "Intenta recargar esta página en un momento o escríbenos por WhatsApp con el ID: " +
-        transactionId
-    );
+    showPaymentError(transactionId, err);
+  } finally {
+    if (retryBtn) retryBtn.disabled = false;
   }
+}
+
+function bindDeliveryForm() {
+  const form = document.getElementById("thanks-delivery-form");
+  if (!form) return;
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const delivery = readDeliveryFields(THANKS_DELIVERY_IDS);
+    const error = validateDelivery(delivery);
+    const errEl = document.getElementById("delivery-form-error");
+    if (error) {
+      if (errEl) {
+        errEl.textContent = error;
+        show(errEl);
+      }
+      return;
+    }
+    if (errEl) hide(errEl);
+
+    saveDelivery(delivery);
+    pageState.deliveryConfirmed = true;
+
+    const payment = pageState.payment || {
+      id: pageState.transactionId,
+      reference: pageState.transactionId,
+      amountInCents: 0,
+    };
+
+    showAfterDeliveryStep(payment, delivery, pageState.mode);
+  });
+}
+
+function bindRetry() {
+  document.getElementById("btn-retry-verify")?.addEventListener("click", runVerification);
+}
+
+function initThanksPage() {
+  const params = new URLSearchParams(window.location.search);
+  pageState.transactionId = params.get("id") || "";
+  pageState.mode = params.get("mode") === "scheduled" ? "scheduled" : "now";
+
+  fillDeliveryFields(loadDelivery(), THANKS_DELIVERY_IDS);
+  bindDeliveryForm();
+  bindRetry();
+  runVerification();
 }
 
 function clearCartMaybe() {

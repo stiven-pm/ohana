@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pago — Ohana Heladería</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" href="./logo.png" type="image/png">
+  <meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
+  <link rel="stylesheet" href="./style.css?v=20260705">
+</head>
+<body class="thanks-page">
+
+  <nav aria-label="Navegación principal">
+    <a href="./" class="logo">
+      <img class="logo-mark" src="./logo.png" alt="Logo Ohana Heladería">
+      Ohana
+    </a>
+    <a href="./#menu" class="nav-cta">Volver al menú</a>
+  </nav>
+
+  <main class="thanks-main">
+    <section class="thanks-card" id="thanks-status" aria-live="polite">
+      <p class="section-label">Pago</p>
+      <h1 id="thanks-title">Verificando tu pago…</h1>
+      <p id="thanks-message">Espera un momento mientras confirmamos con Wompi.</p>
+      <div id="thanks-recovery" class="thanks-recovery" hidden>
+        <p><strong>ID de transacción:</strong> <code id="recovery-id"></code></p>
+        <p id="recovery-detail" class="recovery-detail"></p>
+        <button type="button" id="btn-retry-verify" class="btn-outline">Reintentar verificación</button>
+      </div>
+    </section>
+
+    <section class="thanks-card" id="thanks-delivery" hidden>
+      <p class="section-label">Entrega</p>
+      <h2>Datos de entrega</h2>
+      <p id="delivery-intro">Confirma dónde entregamos tu pedido.</p>
+      <p id="delivery-form-error" class="form-error" hidden></p>
+      <form id="thanks-delivery-form" class="delivery-form">
+        <label class="field-label" for="thanks-name">Nombre</label>
+        <input type="text" id="thanks-name" class="field-input" autocomplete="name" required>
+        <label class="field-label" for="thanks-phone">Teléfono / WhatsApp</label>
+        <input type="tel" id="thanks-phone" class="field-input" autocomplete="tel" required>
+        <label class="field-label" for="thanks-email">Correo</label>
+        <input type="email" id="thanks-email" class="field-input" autocomplete="email" required>
+        <label class="field-label" for="thanks-address">Dirección</label>
+        <textarea id="thanks-address" class="field-input field-input--area" rows="2" required></textarea>
+        <label class="field-label" for="thanks-notes">Notas (opcional)</label>
+        <input type="text" id="thanks-notes" class="field-input">
+        <button type="submit" class="btn-primary btn-block">Confirmar entrega</button>
+      </form>
+    </section>
+
+    <section class="thanks-card" id="thanks-next" hidden>
+      <h2 id="next-title">Siguiente paso</h2>
+      <p id="next-message"></p>
+      <div id="calendar-wrap" class="calendar-wrap" hidden>
+        <iframe id="calendar-embed" title="Programar entrega Ohana" loading="lazy"></iframe>
+      </div>
+      <div class="thanks-actions">
+        <a id="whatsapp-link" class="contact-link" href="#" target="_blank" rel="noopener noreferrer" hidden>
+          Confirmar por WhatsApp
+        </a>
+        <a href="./#menu" class="btn-outline">Hacer otro pedido</a>
+      </div>
+    </section>
+  </main>
+
+  <script src="./js/config.js?v=20260705"></script>
+  <script src="./js/delivery.js?v=20260705"></script>
+  <script src="./js/gracias.js?v=20260705"></script>
+</body>
+</html>

@@ -142,6 +142,14 @@ function getDeliveryMode() {
   return selected ? selected.value : "now";
 }
 
+const CART_DELIVERY_IDS = {
+  name: "customer-name",
+  phone: "customer-phone",
+  email: "customer-email",
+  address: "customer-address",
+  notes: "customer-notes",
+};
+
 function submitCheckout(menu) {
   if (!OHANA_CONFIG.checkoutUrl) {
     alert("Falta configurar la URL de pago en js/config.js");
@@ -150,6 +158,14 @@ function submitCheckout(menu) {
 
   const lines = getCartLines(menu);
   if (!lines.length) return;
+
+  const delivery = readDeliveryFields(CART_DELIVERY_IDS);
+  const deliveryError = validateDelivery(delivery);
+  if (deliveryError) {
+    alert(deliveryError);
+    return;
+  }
+  saveDelivery(delivery);
 
   const form = document.getElementById("api-form");
   document.getElementById("api-items").value = JSON.stringify(
@@ -198,7 +214,14 @@ function bindEvents(menu) {
   });
 
   document.getElementById("btn-whatsapp-cart")?.addEventListener("click", () => {
-    const url = buildWhatsAppUrl(menu, getDeliveryMode());
+    const delivery = readDeliveryFields(CART_DELIVERY_IDS);
+    const deliveryError = validateDelivery(delivery);
+    if (deliveryError) {
+      alert(deliveryError);
+      return;
+    }
+    saveDelivery(delivery);
+    const url = buildWhatsAppUrl(menu, getDeliveryMode(), delivery);
     if (url) window.open(url, "_blank", "noopener,noreferrer");
   });
 
@@ -218,6 +241,7 @@ function bindEvents(menu) {
 async function initApp() {
   try {
     const menu = await loadMenu();
+    fillDeliveryFields(loadDelivery(), CART_DELIVERY_IDS);
     renderMenu(menu);
     renderCart(menu);
     initChat(menu);

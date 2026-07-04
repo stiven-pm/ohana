@@ -72,13 +72,14 @@ function cartSummaryText(menu) {
   return `${items} — Total ${formatCop(cartTotal(menu))}`;
 }
 
-function buildWhatsAppUrl(menu, mode) {
+function buildWhatsAppUrl(menu, mode, delivery) {
   const text = cartSummaryText(menu);
   if (!text) return null;
+  const lines = deliverySummaryLines(delivery || loadDelivery() || {}, mode);
   const prefix =
     mode === "scheduled"
-      ? "Hola Ohana, ya pagué y quiero programar mi entrega: "
-      : "Hola Ohana, ya pagué mi pedido para llevar ya: ";
-  const encoded = encodeURIComponent(prefix + text);
-  return `https://wa.me/${OHANA_CONFIG.whatsappNumber}?text=${encoded}`;
+      ? "Hola Ohana, quiero programar mi pedido:\n"
+      : "Hola Ohana, quiero pedir para entrega:\n";
+  const body = prefix + lines.join("\n") + "\n\nPedido: " + text;
+  return `https://wa.me/${OHANA_CONFIG.whatsappNumber}?text=${encodeURIComponent(body)}`;
 }

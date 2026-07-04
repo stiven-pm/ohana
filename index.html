@@ -38,7 +38,7 @@
     }
   </style>
 
-  <link rel="stylesheet" href="./style.css?v=20260704">
+  <link rel="stylesheet" href="./style.css?v=20260705">
 
   <script type="application/ld+json">
     {
@@ -317,15 +317,28 @@
           <span>Total</span>
           <strong id="cart-total">$0</strong>
         </div>
+        <fieldset class="delivery-fields">
+          <legend>Datos de entrega</legend>
+          <label class="field-label" for="customer-name">Nombre</label>
+          <input type="text" id="customer-name" class="field-input" autocomplete="name" placeholder="Quién recibe" required>
+          <label class="field-label" for="customer-phone">Teléfono / WhatsApp</label>
+          <input type="tel" id="customer-phone" class="field-input" autocomplete="tel" placeholder="300 123 4567" required>
+          <label class="field-label" for="customer-email">Correo</label>
+          <input type="email" id="customer-email" class="field-input" autocomplete="email" placeholder="tu@correo.com" required>
+          <label class="field-label" for="customer-address">Dirección</label>
+          <textarea id="customer-address" class="field-input field-input--area" rows="2" autocomplete="street-address" placeholder="Barrio, calle, casa/apto, referencia" required></textarea>
+          <label class="field-label" for="customer-notes">Notas (opcional)</label>
+          <input type="text" id="customer-notes" class="field-input" placeholder="Torre, color de casa, etc.">
+        </fieldset>
         <fieldset class="delivery-mode">
           <legend>¿Cuándo lo quieres?</legend>
           <label class="radio-card">
             <input type="radio" name="delivery-mode" value="now" checked>
-            <span>Para llevar ya</span>
+            <span>Para ya — según disponibilidad</span>
           </label>
           <label class="radio-card">
             <input type="radio" name="delivery-mode" value="scheduled">
-            <span>Programar entrega (después de pagar)</span>
+            <span>Programar entrega (elige hora después de pagar)</span>
           </label>
         </fieldset>
         <button type="button" id="btn-pay" class="btn-primary btn-block" disabled>Pagar con Wompi</button>
@@ -341,10 +354,11 @@
     <input type="hidden" name="mode" id="api-mode" value="">
   </form>
 
-  <script src="./js/config.js?v=20260704"></script>
-  <script src="./js/cart.js?v=20260704"></script>
-  <script src="./js/assistant.js?v=20260704"></script>
-  <script src="./js/chat.js?v=20260704"></script>
-  <script src="./js/app.js?v=20260704"></script>
+  <script src="./js/config.js?v=20260705"></script>
+  <script src="./js/delivery.js?v=20260705"></script>
+  <script src="./js/cart.js?v=20260705"></script>
+  <script src="./js/assistant.js?v=20260705"></script>
+  <script src="./js/chat.js?v=20260705"></script>
+  <script src="./js/app.js?v=20260705"></script>
 </body>
 </html>
