@@ -48,7 +48,7 @@ function renderChatProducts(menu, productIds, limit = 3) {
   if (!products.length) return;
 
   wrap.innerHTML =
-    '<p class="chat-suggest-label">Toca para agregar: </p>' +
+    '<p class="chat-suggest-label">Toca para agregar:</p>' +
     '<div class="chat-suggest-row">' +
     products
       .map(
