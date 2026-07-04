@@ -9,10 +9,10 @@ function escapeHtml(text) {
 function appendChatBubble(role, text) {
   const log = document.getElementById("chat-log");
   if (!log) return;
-
+  const safe = text && String(text).trim() ? String(text).trim() : "No tengo una respuesta clara. Prueba otra cosa.";
   const bubble = document.createElement("div");
   bubble.className = "chat-bubble chat-bubble--" + role;
-  bubble.innerHTML = escapeHtml(text).replace(/\n/g, "<br>");
+  bubble.innerHTML = escapeHtml(safe).replace(/\n/g, "<br>");
   log.appendChild(bubble);
   scrollChatToBottom();
 }
@@ -67,6 +67,36 @@ function setChatLoading(loading) {
   if (input) input.disabled = loading;
 }
 
+function localFallback(menu, query) {
+  const matches = recommendProducts(menu, query, 3);
+  if (!matches.length) return null;
+  return {
+    ok: true,
+    message: "Del menú te va bien:",
+    productIds: matches.map((m) => m.product.id),
+  };
+}
+
+function normalizeChatPayload(data) {
+  if (!data || typeof data !== "object") return null;
+  if (data.type === "ohana-chat" && data.message) {
+    return {
+      ok: data.ok !== false,
+      message: data.message,
+      productIds: data.productIds || [],
+      error: data.error,
+    };
+  }
+  if (data.message) {
+    return {
+      ok: true,
+      message: data.message,
+      productIds: data.productIds || [],
+    };
+  }
+  return null;
+}
+
 function requestChatJsonp(message) {
   return new Promise((resolve, reject) => {
     if (!OHANA_CONFIG.checkoutUrl) {
@@ -85,8 +115,8 @@ function requestChatJsonp(message) {
 
     const timeout = window.setTimeout(() => {
       cleanup();
-      reject(new Error("Tiempo de espera agotado"));
-    }, 28000);
+      reject(new Error("timeout"));
+    }, 20000);
 
     function cleanup() {
       window.clearTimeout(timeout);
@@ -103,7 +133,7 @@ function requestChatJsonp(message) {
     script.src = url;
     script.onerror = () => {
       cleanup();
-      reject(new Error("No se pudo conectar"));
+      reject(new Error("jsonp error"));
     };
     document.head.appendChild(script);
   });
@@ -122,7 +152,7 @@ async function callGeminiClient(message, menu) {
   }));
 
   const prompt =
-    'Recomienda de Ohana Heladería. JSON only: {"message":"...","productIds":["id"]}. Max 3 ids.\n' +
+    'Asistente Ohana Heladería (Colombia). JSON only: {"message":"...","productIds":["id"]}. Max 3 ids del menú.\n' +
     JSON.stringify(catalog) +
     "\n\n" +
     message;
@@ -140,7 +170,7 @@ async function callGeminiClient(message, menu) {
     }
   );
 
-  if (!res.ok) throw new Error("Gemini error " + res.status);
+  if (!res.ok) throw new Error("Gemini " + res.status);
 
   const payload = await res.json();
   const raw = payload?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
@@ -149,24 +179,35 @@ async function callGeminiClient(message, menu) {
 
   return {
     ok: true,
-    message: parsed.message || "Te recomiendo esto:",
+    message: parsed.message || "Te recomiendo:",
     productIds: validIds.slice(0, 3),
   };
 }
 
 async function requestChat(message, menu) {
   if (OHANA_CONFIG.geminiApiKey) {
-    return callGeminiClient(message, menu);
+    try {
+      return await callGeminiClient(message, menu);
+    } catch (err) {
+      console.warn("Gemini cliente:", err);
+    }
   }
-  return requestChatJsonp(message);
-}
 
-function localFallback(menu, query) {
-  const matches = recommendProducts(menu, query, 3);
-  if (!matches.length) return null;
+  try {
+    const raw = await requestChatJsonp(message);
+    const normalized = normalizeChatPayload(raw);
+    if (normalized?.ok && normalized.message) return normalized;
+  } catch (err) {
+    console.warn("JSONP chat:", err);
+  }
+
+  const fb = localFallback(menu, message);
+  if (fb) return fb;
+
   return {
-    message: "Del menú te va bien:",
-    productIds: matches.map((m) => m.product.id),
+    ok: true,
+    message: "No encontré algo exacto. Mira el menú o escríbenos por WhatsApp.",
+    productIds: [],
   };
 }
 
@@ -180,26 +221,10 @@ async function sendChatMessage(menu, text) {
 
   try {
     const result = await requestChat(trimmed, menu);
-
-    if (result.ok === false) {
-      const fb = localFallback(menu, trimmed);
-      appendChatBubble("bot", fb?.message || result.error || "Intenta otra pregunta.");
-      if (fb) renderChatProducts(menu, fb.productIds, 3);
-      return;
-    }
-
     appendChatBubble("bot", result.message);
     if (result.productIds?.length) {
       renderChatProducts(menu, result.productIds, 3);
     }
-  } catch (err) {
-    console.error(err);
-    const fb = localFallback(menu, trimmed);
-    appendChatBubble(
-      "bot",
-      fb?.message || "No pude conectar con la IA. Revisa GEMINI_API_KEY en Apps Script."
-    );
-    if (fb) renderChatProducts(menu, fb.productIds, 3);
   } finally {
     setChatLoading(false);
   }
@@ -231,10 +256,7 @@ function initChat(menu) {
 
   if (!input || !sendBtn) return;
 
-  appendChatBubble(
-    "bot",
-    "¡Hola! Cuéntame qué te provoque y te recomiendo del menú."
-  );
+  appendChatBubble("bot", "¡Hola! Cuéntame qué te provoque y te recomiendo del menú.");
 
   if (chipsEl) {
     chipsEl.innerHTML = ingredientChips(menu)

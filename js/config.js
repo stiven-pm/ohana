@@ -8,4 +8,6 @@ const OHANA_CONFIG = {
   wompiPublicKey: "pub_test_7I252S6iVBiD62O5CNzT6q2zKkN6Lv8n",
   /** Debe coincidir con WOMPI_API_BASE del script */
   wompiApiBase: "https://sandbox.wompi.co/v1",
+  /** IA real: misma key de AI Studio, restringida a ohana.rekov.co */
+  geminiApiKey: "",
 };

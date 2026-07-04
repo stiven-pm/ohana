@@ -152,8 +152,6 @@ function submitCheckout(menu) {
   if (!lines.length) return;
 
   const form = document.getElementById("api-form");
-  document.getElementById("api-action").value = "";
-  document.getElementById("api-message").value = "";
   document.getElementById("api-items").value = JSON.stringify(
     lines.map(({ product, qty }) => ({ id: product.id, qty }))
   );
