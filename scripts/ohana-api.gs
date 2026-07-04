@@ -12,6 +12,15 @@ const PROP = {
   GEMINI: "GEMINI_API_KEY",
 };
 
+const API_VERSION = 4;
+
+/** Modelos vigentes jul 2026. 2.0 apagados 1-jun-2026 — ver ai.google.dev/gemini-api/docs/changelog */
+const GEMINI_MODELS = [
+  "gemini-2.5-flash-lite",
+  "gemini-3.1-flash-lite",
+  "gemini-2.5-flash",
+];
+
 function doGet(e) {
   const action = e && e.parameter ? e.parameter.action : "";
   const callback = e && e.parameter ? e.parameter.callback : "";
@@ -24,7 +33,11 @@ function doGet(e) {
     return handleVerify_(e.parameter.id, callback);
   }
 
-  return respondJson_({ ok: true, service: "ohana-api" }, callback);
+  if (action === "diag") {
+    return handleDiag_(callback);
+  }
+
+  return respondJson_({ ok: true, service: "ohana-api", apiVersion: API_VERSION }, callback);
 }
 
 function doPost(e) {
@@ -89,12 +102,11 @@ function callGemini_(userMessage, menu) {
   });
 
   const prompt = buildChatPrompt_(userMessage, catalog);
-  const models = ["gemini-2.0-flash-lite", "gemini-2.0-flash", "gemini-1.5-flash"];
   let lastError = "Gemini no respondió";
 
-  for (var i = 0; i < models.length; i++) {
+  for (var i = 0; i < GEMINI_MODELS.length; i++) {
     try {
-      return requestGeminiModel_(models[i], apiKey, prompt, catalog);
+      return requestGeminiModel_(GEMINI_MODELS[i], apiKey, prompt, catalog);
     } catch (err) {
       lastError = String(err.message || err);
     }
@@ -155,7 +167,7 @@ function requestGeminiModel_(model, apiKey, prompt, catalog) {
 
   if (!raw) throw new Error("Gemini devolvió respuesta vacía");
 
-  const parsed = JSON.parse(raw);
+  const parsed = parseGeminiJson_(raw);
   const ids = (parsed.productIds || []).filter(function (id) {
     return catalog.some(function (p) {
       return p.id === id;
@@ -176,6 +188,57 @@ function parseGeminiError_(body, code) {
     /* ignore */
   }
   return "Gemini HTTP " + code;
+}
+
+function parseGeminiJson_(raw) {
+  let text = String(raw || "").trim();
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenced) text = fenced[1].trim();
+  return JSON.parse(text);
+}
+
+function handleDiag_(callback) {
+  const info = { type: "ohana-diag", apiVersion: API_VERSION };
+
+  try {
+    const key = PropertiesService.getScriptProperties().getProperty(PROP.GEMINI);
+    info.hasGeminiKey = !!key;
+    info.keyPreview = key ? key.slice(0, 8) + "…" : null;
+
+    if (!key) {
+      info.geminiOk = false;
+      info.geminiError = "Falta propiedad GEMINI_API_KEY en Propiedades del script";
+      return respondJson_(info, callback);
+    }
+
+    const url =
+      "https://generativelanguage.googleapis.com/v1beta/models/" +
+      GEMINI_MODELS[0] +
+      ":generateContent?key=" +
+      encodeURIComponent(key);
+
+    const res = UrlFetchApp.fetch(url, {
+      method: "post",
+      contentType: "application/json",
+      muteHttpExceptions: true,
+      payload: JSON.stringify({
+        contents: [{ parts: [{ text: "Responde solo: ok" }] }],
+      }),
+    });
+
+    info.geminiHttp = res.getResponseCode();
+    if (res.getResponseCode() >= 200 && res.getResponseCode() < 300) {
+      info.geminiOk = true;
+    } else {
+      info.geminiOk = false;
+      info.geminiError = parseGeminiError_(res.getContentText(), res.getResponseCode());
+    }
+  } catch (err) {
+    info.geminiOk = false;
+    info.geminiError = String(err.message || err);
+  }
+
+  return respondJson_(info, callback);
 }
 
 function handleCheckout_(body) {

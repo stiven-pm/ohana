@@ -109,7 +109,10 @@ function parseGeminiErrorBody(body, status) {
 }
 
 function parseGeminiResponse(raw, catalog) {
-  const parsed = JSON.parse(raw || "{}");
+  let text = String(raw || "").trim();
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenced) text = fenced[1].trim();
+  const parsed = JSON.parse(text);
   const validIds = (parsed.productIds || []).filter((id) => catalog.some((p) => p.id === id));
   const message = String(parsed.message || "").trim();
   if (!message) throw new Error("Gemini devolvió respuesta vacía");
@@ -192,7 +195,7 @@ async function callGeminiClient(message, menu) {
 
   const catalog = buildChatCatalog(menu);
   const prompt = buildChatPrompt(message, catalog);
-  const models = ["gemini-2.0-flash-lite", "gemini-2.0-flash", "gemini-1.5-flash"];
+  const models = ["gemini-2.5-flash-lite", "gemini-3.1-flash-lite", "gemini-2.5-flash"];
   let lastError = "Gemini no respondió";
 
   for (const model of models) {
