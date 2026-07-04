@@ -27,6 +27,13 @@ function clearSuggestions() {
   if (wrap) wrap.innerHTML = "";
 }
 
+function hideIngredientChips() {
+  const chipsEl = document.getElementById("chat-chips");
+  if (!chipsEl) return;
+  chipsEl.hidden = true;
+  chipsEl.innerHTML = "";
+}
+
 function renderChatProducts(menu, productIds, limit = 3) {
   const wrap = document.getElementById("chat-suggestions");
   if (!wrap) return;
@@ -67,9 +74,18 @@ function setChatLoading(loading) {
   if (input) input.disabled = loading;
 }
 
+const CHAT_STOPWORDS = new Set([
+  "hola", "como", "que", "te", "me", "un", "una", "el", "la", "de", "por", "con", "si", "no",
+  "ya", "muy", "mas", "llamas", "nombre", "quien", "eres", "buenas", "gracias", "ayuda",
+]);
+
 function localFallback(menu, query) {
-  const matches = recommendProducts(menu, query, 3);
-  if (!matches.length) return null;
+  const tokens = tokenizeQuery(query).filter((t) => !CHAT_STOPWORDS.has(t));
+  if (!tokens.length) return null;
+
+  const matches = recommendProducts(menu, tokens.join(" "), 3);
+  if (!matches.length || matches[0].score < 2) return null;
+
   return {
     ok: true,
     message: "Del menú te va bien:",
@@ -79,13 +95,17 @@ function localFallback(menu, query) {
 
 function normalizeChatPayload(data) {
   if (!data || typeof data !== "object") return null;
-  if (data.type === "ohana-chat" && data.message) {
-    return {
-      ok: data.ok !== false,
-      message: data.message,
-      productIds: data.productIds || [],
-      error: data.error,
-    };
+  if (data.type === "ohana-chat") {
+    if (data.message) {
+      return {
+        ok: data.ok !== false,
+        message: data.message,
+        productIds: data.productIds || [],
+      };
+    }
+    if (data.error) {
+      return { ok: false, error: data.error };
+    }
   }
   if (data.message) {
     return {
@@ -193,16 +213,27 @@ async function requestChat(message, menu) {
     }
   }
 
+  let apiError = null;
   try {
     const raw = await requestChatJsonp(message);
     const normalized = normalizeChatPayload(raw);
     if (normalized?.ok && normalized.message) return normalized;
+    if (normalized?.error) apiError = normalized.error;
   } catch (err) {
     console.warn("JSONP chat:", err);
   }
 
   const fb = localFallback(menu, message);
   if (fb) return fb;
+
+  if (apiError) {
+    return {
+      ok: true,
+      message:
+        "La IA no respondió (revisa GEMINI_API_KEY en Apps Script). Mientras tanto prueba un sabor como «fresa» o «chocolate», o escríbenos por WhatsApp.",
+      productIds: [],
+    };
+  }
 
   return {
     ok: true,
@@ -215,6 +246,7 @@ async function sendChatMessage(menu, text) {
   const trimmed = text.trim();
   if (!trimmed) return;
 
+  hideIngredientChips();
   clearSuggestions();
   appendChatBubble("user", trimmed);
   setChatLoading(true);
