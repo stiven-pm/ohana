@@ -298,23 +298,27 @@ async function sendChatMessage(menu, text) {
   }
 }
 
-function openChatWidget() {
+function setChatOpen(open) {
   const widget = document.getElementById("chat-widget");
   const toggle = document.getElementById("chat-toggle");
+  const backdrop = document.getElementById("chat-backdrop");
   if (!widget) return;
-  widget.hidden = false;
-  widget.setAttribute("aria-hidden", "false");
-  if (toggle) toggle.setAttribute("aria-expanded", "true");
-  document.getElementById("chat-input")?.focus();
+
+  widget.hidden = !open;
+  widget.setAttribute("aria-hidden", open ? "false" : "true");
+  if (toggle) toggle.setAttribute("aria-expanded", open ? "true" : "false");
+  if (backdrop) backdrop.hidden = !open;
+  document.body.classList.toggle("chat-open", open);
+
+  if (open) document.getElementById("chat-input")?.focus();
+}
+
+function openChatWidget() {
+  setChatOpen(true);
 }
 
 function closeChatWidget() {
-  const widget = document.getElementById("chat-widget");
-  const toggle = document.getElementById("chat-toggle");
-  if (!widget) return;
-  widget.hidden = true;
-  widget.setAttribute("aria-hidden", "true");
-  if (toggle) toggle.setAttribute("aria-expanded", "false");
+  setChatOpen(false);
 }
 
 function initChat(menu) {
@@ -360,6 +364,14 @@ function initChat(menu) {
     const widget = document.getElementById("chat-widget");
     if (widget?.hidden) openChatWidget();
     else closeChatWidget();
+  });
+
+  document.getElementById("chat-backdrop")?.addEventListener("click", closeChatWidget);
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !document.getElementById("chat-widget")?.hidden) {
+      closeChatWidget();
+    }
   });
 
   document.querySelectorAll("[data-close-chat]").forEach((btn) => {

@@ -780,6 +780,29 @@ body.has-cart-bar .float-stack {
   animation: popUp 0.2s ease;
 }
 
+.chat-widget[hidden] {
+  display: none !important;
+}
+
+.chat-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 125;
+  border: none;
+  padding: 0;
+  background: rgba(15, 45, 52, 0.4);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.chat-backdrop[hidden] {
+  display: none !important;
+}
+
+body.chat-open {
+  overflow: hidden;
+}
+
 .chat-widget-body {
   flex: 1;
   min-height: 0;
@@ -971,6 +994,24 @@ body.has-cart-bar .float-stack {
     justify-content: center;
     padding: 0;
     border-radius: 50%;
+  }
+
+  .chat-widget:not([hidden]) {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 88px;
+    width: auto;
+    max-width: none;
+    height: min(420px, calc(100dvh - 168px));
+    z-index: 140;
+    border-radius: 16px 16px 20px 20px;
+  }
+
+  body.chat-open .float-btn--chat {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.85);
   }
 }
 
