@@ -8,11 +8,6 @@ async function loadMenu() {
   return menuCache;
 }
 
-function categoryName(menu, categoryId) {
-  const cat = menu.categories.find((c) => c.id === categoryId);
-  return cat ? cat.name : categoryId;
-}
-
 function renderMenu(menu) {
   const root = document.getElementById("menu-root");
   if (!root) return;
@@ -31,7 +26,7 @@ function renderMenu(menu) {
       const items = byCategory.get(cat.id);
       const list = items
         .map((product) => {
-          const ing = (product.ingredients || []).slice(0, 4).join(", ");
+          const ing = (product.ingredients || []).slice(0, 3).join(", ");
           return `
             <li class="menu-item" data-product-id="${product.id}">
               <div class="menu-item-info">
@@ -40,9 +35,7 @@ function renderMenu(menu) {
               </div>
               <div class="menu-item-actions">
                 <span class="menu-item-price">${formatCop(product.price)}</span>
-                <button type="button" class="btn-add" data-add="${product.id}" aria-label="Agregar ${product.name}">
-                  +
-                </button>
+                <button type="button" class="btn-add" data-add="${product.id}" aria-label="Agregar ${product.name}">+</button>
               </div>
             </li>`;
         })
@@ -63,20 +56,37 @@ function renderMenu(menu) {
     .join("");
 }
 
-function renderCart(menu) {
-  const linesEl = document.getElementById("cart-lines");
-  const totalEl = document.getElementById("cart-total");
-  const countEl = document.getElementById("cart-count");
-  const payBtn = document.getElementById("btn-pay");
-  const emptyEl = document.getElementById("cart-empty");
-  if (!linesEl) return;
-
+function updateCartChrome(menu) {
   const lines = getCartLines(menu);
   const total = cartTotal(menu);
   const count = cartCount(menu);
 
-  if (countEl) countEl.textContent = String(count);
-  if (totalEl) totalEl.textContent = formatCop(total);
+  const ids = [
+    "cart-count",
+    "cart-count-bar",
+    "cart-total",
+    "cart-total-bar",
+  ];
+  document.getElementById("cart-count") &&
+    (document.getElementById("cart-count").textContent = String(count));
+  document.getElementById("cart-count-bar") &&
+    (document.getElementById("cart-count-bar").textContent = String(count));
+  document.getElementById("cart-total") &&
+    (document.getElementById("cart-total").textContent = formatCop(total));
+  document.getElementById("cart-total-bar") &&
+    (document.getElementById("cart-total-bar").textContent = formatCop(total));
+
+  const bar = document.getElementById("cart-bar");
+  if (bar) {
+    bar.hidden = count === 0;
+    document.body.classList.toggle("has-cart-bar", count > 0);
+  }
+
+  const payBtn = document.getElementById("btn-pay");
+  const emptyEl = document.getElementById("cart-empty");
+  const linesEl = document.getElementById("cart-lines");
+
+  if (!linesEl) return;
 
   if (!lines.length) {
     linesEl.innerHTML = "";
@@ -107,52 +117,24 @@ function renderCart(menu) {
     .join("");
 }
 
-function renderAssistantResults(menu, query) {
-  const resultsEl = document.getElementById("assistant-results");
-  if (!resultsEl) return;
-
-  const matches = recommendProducts(menu, query);
-  if (!query.trim()) {
-    resultsEl.innerHTML =
-      '<p class="assistant-hint">Escribe ingredientes o lo que te provoque: “algo ácido con lulo”, “fresa y crema”, “chocolate”…</p>';
-    return;
-  }
-
-  if (!matches.length) {
-    resultsEl.innerHTML =
-      '<p class="assistant-hint">No encontramos algo exacto. Prueba con otra fruta o pide por WhatsApp.</p>';
-    return;
-  }
-
-  resultsEl.innerHTML = matches
-    .map(({ product }) => {
-      const ing = (product.ingredients || []).join(", ");
-      return `
-        <article class="assistant-card">
-          <div>
-            <h4>${product.name}</h4>
-            <p>${product.description || ""}</p>
-            <p class="assistant-ing"><strong>Ingredientes:</strong> ${ing}</p>
-          </div>
-          <div class="assistant-card-actions">
-            <span>${formatCop(product.price)}</span>
-            <button type="button" class="btn-add" data-add="${product.id}">Agregar</button>
-          </div>
-        </article>`;
-    })
-    .join("");
+function renderCart(menu) {
+  updateCartChrome(menu);
 }
 
-function renderIngredientChips(menu) {
-  const chipsEl = document.getElementById("ingredient-chips");
-  if (!chipsEl) return;
+function openCartDrawer() {
+  const drawer = document.getElementById("cart-drawer");
+  if (!drawer) return;
+  drawer.hidden = false;
+  drawer.setAttribute("aria-hidden", "false");
+  document.body.classList.add("cart-open");
+}
 
-  chipsEl.innerHTML = ingredientChips(menu)
-    .map(
-      (name) =>
-        `<button type="button" class="chip" data-chip="${name}">${name}</button>`
-    )
-    .join("");
+function closeCartDrawer() {
+  const drawer = document.getElementById("cart-drawer");
+  if (!drawer) return;
+  drawer.hidden = true;
+  drawer.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("cart-open");
 }
 
 function getDeliveryMode() {
@@ -162,21 +144,22 @@ function getDeliveryMode() {
 
 function submitCheckout(menu) {
   if (!OHANA_CONFIG.checkoutUrl) {
-    alert(
-      "Falta configurar la URL de pago (js/config.js y Google Apps Script). Mientras tanto puedes pedir por WhatsApp."
-    );
+    alert("Falta configurar la URL de pago en js/config.js");
     return;
   }
 
   const lines = getCartLines(menu);
   if (!lines.length) return;
 
-  const form = document.getElementById("checkout-form");
-  document.getElementById("checkout-items").value = JSON.stringify(
+  const form = document.getElementById("api-form");
+  document.getElementById("api-action").value = "";
+  document.getElementById("api-message").value = "";
+  document.getElementById("api-items").value = JSON.stringify(
     lines.map(({ product, qty }) => ({ id: product.id, qty }))
   );
-  document.getElementById("checkout-mode").value = getDeliveryMode();
+  document.getElementById("api-mode").value = getDeliveryMode();
   form.action = OHANA_CONFIG.checkoutUrl;
+  form.target = "_self";
   form.submit();
 }
 
@@ -186,62 +169,49 @@ function bindEvents(menu) {
     if (addBtn) {
       addToCart(addBtn.dataset.add, 1);
       renderCart(menu);
+      openCartDrawer();
       return;
     }
 
     const qtyBtn = event.target.closest("[data-qty]");
     if (qtyBtn) {
-      const id = qtyBtn.dataset.qty;
-      const delta = Number(qtyBtn.dataset.delta);
-      addToCart(id, delta);
+      addToCart(qtyBtn.dataset.qty, Number(qtyBtn.dataset.delta));
       renderCart(menu);
       return;
     }
 
-    const chip = event.target.closest("[data-chip]");
-    if (chip) {
-      const input = document.getElementById("assistant-input");
-      if (input) {
-        const current = input.value.trim();
-        input.value = current ? `${current}, ${chip.dataset.chip}` : chip.dataset.chip;
-        renderAssistantResults(menu, input.value);
-      }
+    const openCart = event.target.closest("[data-open-cart]");
+    if (openCart) {
+      event.preventDefault();
+      openCartDrawer();
+      return;
+    }
+
+    const closeCart = event.target.closest("[data-close-cart]");
+    if (closeCart) {
+      closeCartDrawer();
     }
   });
 
-  const searchBtn = document.getElementById("assistant-search");
-  const input = document.getElementById("assistant-input");
-  if (searchBtn && input) {
-    const runSearch = () => renderAssistantResults(menu, input.value);
-    searchBtn.addEventListener("click", runSearch);
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        runSearch();
-      }
-    });
-  }
+  document.getElementById("cart-backdrop")?.addEventListener("click", closeCartDrawer);
 
-  const payBtn = document.getElementById("btn-pay");
-  if (payBtn) {
-    payBtn.addEventListener("click", () => submitCheckout(menu));
-  }
+  document.getElementById("btn-pay")?.addEventListener("click", () => {
+    submitCheckout(menu);
+  });
 
-  const waBtn = document.getElementById("btn-whatsapp-cart");
-  if (waBtn) {
-    waBtn.addEventListener("click", () => {
-      const url = buildWhatsAppUrl(menu, getDeliveryMode());
-      if (url) window.open(url, "_blank", "noopener,noreferrer");
-    });
-  }
+  document.getElementById("btn-whatsapp-cart")?.addEventListener("click", () => {
+    const url = buildWhatsAppUrl(menu, getDeliveryMode());
+    if (url) window.open(url, "_blank", "noopener,noreferrer");
+  });
 
-  const clearBtn = document.getElementById("btn-clear-cart");
-  if (clearBtn) {
-    clearBtn.addEventListener("click", () => {
-      clearCart();
-      renderCart(menu);
-    });
-  }
+  document.getElementById("btn-clear-cart")?.addEventListener("click", () => {
+    clearCart();
+    renderCart(menu);
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeCartDrawer();
+  });
 }
 
 async function initApp() {
@@ -249,14 +219,8 @@ async function initApp() {
     const menu = await loadMenu();
     renderMenu(menu);
     renderCart(menu);
-    renderAssistantResults(menu, "");
-    renderIngredientChips(menu);
+    initChat(menu);
     bindEvents(menu);
-
-    const configWarning = document.getElementById("config-warning");
-    if (configWarning && !OHANA_CONFIG.checkoutUrl) {
-      configWarning.hidden = false;
-    }
   } catch (err) {
     console.error(err);
     const root = document.getElementById("menu-root");

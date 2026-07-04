@@ -91,12 +91,10 @@
     <ul class="nav-links">
       <li><a href="#galeria">Galería</a></li>
       <li><a href="#menu">Menú</a></li>
-      <li><a href="#asistente">Asistente</a></li>
-      <li><a href="#pedido">Pedir</a></li>
       <li><a href="#nosotros">Nosotros</a></li>
       <li><a href="#contacto">Contacto</a></li>
     </ul>
-    <a href="#pedido" class="nav-cta">Pedir ahora</a>
+    <button type="button" class="nav-cta" data-open-cart>Pedir</button>
   </nav>
 
   <main>
@@ -113,8 +111,8 @@
           con el toque tropical de nuestra marca.
         </p>
         <div class="hero-actions">
-          <a href="#menu" class="btn-primary">Ver menú</a>
-          <a href="#asistente" class="btn-outline">¿Qué me recomiendas?</a>
+          <a href="#menu" class="btn-primary">Ver menú y pedir</a>
+          <a href="#galeria" class="btn-outline">Nuestras preparaciones</a>
         </div>
       </div>
 
@@ -174,89 +172,32 @@
       </div>
     </section>
 
-    <section class="section-wrap" id="menu" aria-labelledby="menu-title">
+    <section class="section-wrap menu-section" id="menu" aria-labelledby="menu-title">
       <p class="section-label">Carta</p>
-      <h2 class="section-title" id="menu-title">Menú</h2>
+      <h2 class="section-title" id="menu-title">Menú y asistente</h2>
+      <p class="section-intro">Elige del menú o pregúntale a la IA qué te recomienda. Tu pedido queda en el carrito abajo.</p>
 
       <figure class="menu-banner">
         <img src="./assets/menu-ref.png" width="1200" height="600" alt="Menú impreso de Ohana Heladería con categorías de postres, helados y preparaciones de fruta" loading="lazy">
       </figure>
 
-      <div id="menu-root" class="menu-grid" aria-live="polite"></div>
-    </section>
+      <div class="menu-shop">
+        <div id="menu-root" class="menu-grid" aria-live="polite"></div>
 
-    <section class="section-wrap assistant-section" id="asistente" aria-labelledby="asistente-title">
-      <p class="section-label">Asistente</p>
-      <h2 class="section-title" id="asistente-title">¿Qué te provoque según ingredientes?</h2>
-      <p class="section-intro">Escribe frutas, sabores o antojos. Te sugerimos del menú sin guardar tus datos.</p>
-
-      <div class="assistant-panel">
-        <div class="assistant-search-row">
-          <input
-            type="search"
-            id="assistant-input"
-            class="assistant-input"
-            placeholder="Ej: algo ácido con lulo, fresa y crema, chocolate…"
-            autocomplete="off"
-          >
-          <button type="button" id="assistant-search" class="btn-primary">Buscar</button>
-        </div>
-        <div id="ingredient-chips" class="ingredient-chips" aria-label="Ingredientes populares"></div>
-        <div id="assistant-results" class="assistant-results"></div>
-      </div>
-    </section>
-
-    <section class="section-wrap order-section" id="pedido" aria-labelledby="pedido-title">
-      <p class="section-label">Tu pedido</p>
-      <h2 class="section-title" id="pedido-title">Arma el pedido y paga seguro</h2>
-      <p class="section-intro">Agrega productos del menú. Pagas el total exacto con Wompi. Sin registro en nuestro sitio.</p>
-
-      <div id="config-warning" class="config-warning" hidden>
-        Falta configurar la URL de pago en <code>js/config.js</code> y el script de Google Apps Script.
-        Mientras tanto puedes armar el pedido y enviarlo por WhatsApp.
-      </div>
-
-      <div class="order-layout">
-        <div class="cart-panel">
-          <div class="cart-header">
-            <h3>Carrito <span id="cart-count" class="cart-badge">0</span></h3>
-            <button type="button" id="btn-clear-cart" class="btn-text">Vaciar</button>
+        <aside class="chat-panel" aria-labelledby="chat-title">
+          <div class="chat-panel-head">
+            <h3 id="chat-title">Asistente Ohana</h3>
+            <span class="chat-badge">IA</span>
           </div>
-          <p id="cart-empty" class="cart-empty">Aún no has agregado nada. Ve al menú o usa el asistente.</p>
-          <ul id="cart-lines" class="cart-lines"></ul>
-          <div class="cart-footer">
-            <div class="cart-total-row">
-              <span>Total</span>
-              <strong id="cart-total">$0</strong>
-            </div>
-
-            <fieldset class="delivery-mode">
-              <legend>¿Cuándo lo quieres?</legend>
-              <label class="radio-card">
-                <input type="radio" name="delivery-mode" value="now" checked>
-                <span>Para llevar ya</span>
-              </label>
-              <label class="radio-card">
-                <input type="radio" name="delivery-mode" value="scheduled">
-                <span>Programar entrega (después de pagar)</span>
-              </label>
-            </fieldset>
-
-            <button type="button" id="btn-pay" class="btn-primary btn-block" disabled>
-              Pagar con Wompi
-            </button>
-            <button type="button" id="btn-whatsapp-cart" class="btn-outline btn-block">
-              Solo consultar por WhatsApp
-            </button>
-            <p class="order-note">Al pagar, Wompi procesa el cobro. Nosotros no guardamos tarjetas ni datos de pago.</p>
+          <div id="chat-log" class="chat-log" aria-live="polite"></div>
+          <div id="chat-suggestions" class="chat-suggestions"></div>
+          <div id="chat-chips" class="ingredient-chips chat-chips"></div>
+          <div class="chat-compose">
+            <textarea id="chat-input" class="chat-input" rows="2" placeholder="Ej: algo ácido con lulo, o postre con chocolate…" autocomplete="off"></textarea>
+            <button type="button" id="chat-send" class="btn-primary">Enviar</button>
           </div>
-        </div>
+        </aside>
       </div>
-
-      <form id="checkout-form" method="POST" target="_self" hidden>
-        <input type="hidden" name="items" id="checkout-items" value="">
-        <input type="hidden" name="mode" id="checkout-mode" value="now">
-      </form>
     </section>
 
     <section class="section-wrap about" id="nosotros" aria-labelledby="nosotros-title">
@@ -317,16 +258,64 @@
       <span class="footer-copy">© 2026 Ohana Heladería. Prototipo de presentación.</span>
     </div>
     <ul class="footer-links">
-      <li><a href="#pedido">Pedir</a></li>
       <li><a href="#menu">Menú</a></li>
       <li><a href="#galeria">Galería</a></li>
       <li><a href="#contacto">Contacto</a></li>
     </ul>
   </footer>
 
+  <div id="cart-bar" class="cart-bar" hidden>
+    <button type="button" class="cart-bar-btn" data-open-cart>
+      <span class="cart-bar-label">Tu pedido</span>
+      <span class="cart-bar-meta"><span id="cart-count-bar">0</span> · <strong id="cart-total-bar">$0</strong></span>
+    </button>
+  </div>
+
+  <div id="cart-drawer" class="cart-drawer" hidden aria-hidden="true">
+    <div id="cart-backdrop" class="cart-backdrop" data-close-cart></div>
+    <div class="cart-sheet" role="dialog" aria-labelledby="cart-drawer-title">
+      <div class="cart-sheet-head">
+        <h2 id="cart-drawer-title">Tu pedido <span id="cart-count" class="cart-badge">0</span></h2>
+        <button type="button" class="cart-close" data-close-cart aria-label="Cerrar">×</button>
+      </div>
+      <p id="cart-empty" class="cart-empty">Agrega productos del menú o pide recomendación al asistente.</p>
+      <ul id="cart-lines" class="cart-lines"></ul>
+      <div class="cart-footer">
+        <div class="cart-total-row">
+          <span>Total</span>
+          <strong id="cart-total">$0</strong>
+        </div>
+        <fieldset class="delivery-mode">
+          <legend>¿Cuándo lo quieres?</legend>
+          <label class="radio-card">
+            <input type="radio" name="delivery-mode" value="now" checked>
+            <span>Para llevar ya</span>
+          </label>
+          <label class="radio-card">
+            <input type="radio" name="delivery-mode" value="scheduled">
+            <span>Programar entrega (después de pagar)</span>
+          </label>
+        </fieldset>
+        <button type="button" id="btn-pay" class="btn-primary btn-block" disabled>Pagar con Wompi</button>
+        <button type="button" id="btn-whatsapp-cart" class="btn-outline btn-block">Consultar por WhatsApp</button>
+        <button type="button" id="btn-clear-cart" class="btn-text btn-block">Vaciar carrito</button>
+        <p class="order-note">Sin registro. Wompi procesa el pago de forma segura.</p>
+      </div>
+    </div>
+  </div>
+
+  <iframe name="api-frame" id="api-frame" class="api-frame" title="API Ohana" tabindex="-1"></iframe>
+  <form id="api-form" method="POST" target="api-frame" hidden>
+    <input type="hidden" name="action" id="api-action" value="">
+    <input type="hidden" name="message" id="api-message" value="">
+    <input type="hidden" name="items" id="api-items" value="">
+    <input type="hidden" name="mode" id="api-mode" value="">
+  </form>
+
   <script src="./js/config.js"></script>
   <script src="./js/cart.js"></script>
   <script src="./js/assistant.js"></script>
+  <script src="./js/chat.js"></script>
   <script src="./js/app.js"></script>
 </body>
 </html>

@@ -15,47 +15,44 @@ function show(el) {
   if (el) el.hidden = false;
 }
 
+function normalizeVerifyResult(payload) {
+  const tx = payload.data || payload;
+  return {
+    ok: true,
+    id: tx.id,
+    status: tx.status,
+    reference: tx.reference,
+    amountInCents: tx.amount_in_cents,
+    currency: tx.currency,
+    approved: tx.status === "APPROVED",
+  };
+}
+
 async function verifyPayment(transactionId) {
-  const base = OHANA_CONFIG.verifyUrl;
-  if (!base) {
-    throw new Error("Falta verifyUrl en config.js");
+  const publicKey = OHANA_CONFIG.wompiPublicKey;
+  const apiBase =
+    OHANA_CONFIG.wompiApiBase || "https://production.wompi.co/v1";
+
+  if (!publicKey) {
+    throw new Error("Falta wompiPublicKey en js/config.js");
   }
 
-  const callbackName = "ohanaVerifyCb_" + Date.now();
   const url =
-    base +
-    (base.includes("?") ? "&" : "?") +
-    "action=verify&id=" +
+    apiBase +
+    "/transactions/" +
     encodeURIComponent(transactionId) +
-    "&callback=" +
-    encodeURIComponent(callbackName);
+    "?fields=id,status,reference,amount_in_cents,currency";
 
-  return new Promise((resolve, reject) => {
-    const timeout = window.setTimeout(() => {
-      cleanup();
-      reject(new Error("Tiempo de espera agotado"));
-    }, 15000);
-
-    function cleanup() {
-      window.clearTimeout(timeout);
-      delete window[callbackName];
-      script.remove();
-    }
-
-    window[callbackName] = (data) => {
-      cleanup();
-      resolve(data);
-    };
-
-    const script = document.createElement("script");
-    script.src = url;
-    script.async = true;
-    script.onerror = () => {
-      cleanup();
-      reject(new Error("No se pudo verificar"));
-    };
-    document.head.appendChild(script);
+  const res = await fetch(url, {
+    headers: { Authorization: "Bearer " + publicKey },
   });
+
+  if (!res.ok) {
+    throw new Error("Wompi respondió " + res.status);
+  }
+
+  const payload = await res.json();
+  return normalizeVerifyResult(payload);
 }
 
 async function pollPayment(transactionId, attempts = 8) {
@@ -159,7 +156,8 @@ async function initThanksPage() {
     setText("thanks-title", "No pudimos verificar el pago");
     setText(
       "thanks-message",
-      "Intenta recargar esta página en un momento o escríbenos por WhatsApp."
+      "Intenta recargar esta página en un momento o escríbenos por WhatsApp con el ID: " +
+        transactionId
     );
   }
 }
