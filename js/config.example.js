@@ -9,4 +9,6 @@ const OHANA_CONFIG = {
   menuUrl: "./data/menu.json",
   wompiPublicKey: "pub_test_...",
   wompiApiBase: "https://sandbox.wompi.co/v1",
+  /** Opcional: llama Gemini directo (más fiable). Restringe por referrer en AI Studio. */
+  geminiApiKey: "",
 };
